@@ -1,0 +1,60 @@
+import pandas as pd
+from datetime import date
+import time
+import requests
+import os
+
+# Print the current date
+today = date.today()
+print("Date:", today.strftime("%d/%m/%Y"))
+
+# Ask for the seller ID
+seller_shopee_id = input('Type in the seller id: \n')
+
+# Define the API request URL
+url_api_request = 'https://shopee.com.br/api/v4/recommend/recommend?bundle=shop_page_product_tab_main&limit=999&offset=0&section=shop_page_product_tab_main_sec&shopid=' + seller_shopee_id
+
+# Send the API request
+response = requests.get(url_api_request)
+data = response.json()
+
+# Get the number of ads published
+num_ads = data['data']['sections'][0]['data']['item']
+list_size = len(num_ads)
+
+# Create a list to store the extracted data
+results = []
+
+# Iterate over each ad and extract information
+for ad in num_ads:
+    ad_id = str(ad['itemid'])
+    title = ad['name']
+    stock = str(ad['stock'])
+    sales = str(ad['historical_sold'])
+    likes = str(ad['liked_count'])
+    views = str(ad['view_count'])
+    price = str(ad['price'])
+    rating = str(ad['item_rating']['rating_count'][0])
+
+    # Append the ad information to the results list
+    results.append([ad_id, title, stock, price, sales, rating, likes, views])
+
+    # Sleep for 1 second
+    time.sleep(1)
+
+# Create a DataFrame from the results list
+df = pd.DataFrame(results, columns=["Ad ID", "Title", "Stock", "Price", "Sales", "Rating", "Likes", "Views"])
+
+# Extract the date from the CSV file name
+csv_file = r"C:\Users\Habeeb\Downloads\Excel\{}.csv".format(today)
+filename = os.path.basename(csv_file)
+date_str = os.path.splitext(filename)[0]
+file_date = pd.to_datetime(date_str, format="%Y-%m-%d").date()
+
+# Add a new column with the extracted date
+df["Date"] = file_date
+
+# Save the DataFrame to a CSV file
+df.to_csv(csv_file, index=False)
+
+print('The scraper is done. Your CSV file is ready!')
